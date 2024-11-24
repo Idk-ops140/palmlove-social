@@ -26,6 +26,30 @@
             </form>
         </section>
 
+        <section id="login">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <input type="text" id="loginUsername" placeholder="Username" required>
+                <input type="password" id="loginPassword" placeholder="Password" required>
+                <label>
+                    <input type="checkbox" id="rememberMe"> Remember Me
+                </label>
+                <button type="submit">Login</button>
+            </form>
+        </section>
+
+        <section id="postSection" style="display: none;">
+            <h2>Create a Post</h2>
+            <input type="text" id="postContent" placeholder="What’s on your mind?" required>
+            <button id="postButton">Post</button>
+        </section>
+
+        <section id="adminVerification" style="display: none;">
+            <h2>Admin Verification</h2>
+            <input type="text" id="secretCode" placeholder="Enter Secret Code" required/>
+            <button id="verifyAdmin">Verify</button>
+        </section>
+
         <section id="feed">
             <h2>Feed</h2>
             <div id="posts-container"></div>
