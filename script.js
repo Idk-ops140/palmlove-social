@@ -1,7 +1,46 @@
 let users = []; // This will hold user account data
 let userStatuses = {}; // Stores the status (banned/terminated) of users
+let posts = []; // Tracks posts created by users
 const ADMIN_USERNAME = "CountryballMations";
 const ADMIN_SECRET_CODE = "1006";
+let currentUser = null;
+
+function loadCurrentUser() {
+    const rememberedUsername = localStorage.getItem("rememberedUsername");
+    if (rememberedUsername) {
+        loginUser(rememberedUsername);
+    }
+}
+
+// Simulates user login
+function loginUser(username) {
+    const user = users.find(u => u.username === username);
+    if (user) {
+        currentUser = user.username;
+        document.getElementById("currentUsername").textContent = currentUser;
+        document.getElementById("userDisplay").style.display = "block";
+        document.getElementById("login").style.display = "none";
+        document.getElementById("postSection").style.display = "block";
+        displayPosts();
+
+        if (document.getElementById("rememberMe").checked) {
+            localStorage.setItem("rememberedUsername", currentUser);
+        }
+        alert(`Welcome back, ${currentUser}!`);
+        return true;
+    }
+    alert("Login failed.");
+    return false;
+}
+
+function logoutUser() {
+    currentUser = null;
+    document.getElementById("userDisplay").style.display = "none";
+    document.getElementById("login").style.display = "block";
+    document.getElementById("postSection").style.display = "none";
+    localStorage.removeItem("rememberedUsername");
+    alert("You have logged out.");
+}
 
 document.getElementById('signupForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -14,6 +53,11 @@ document.getElementById('signupForm').addEventListener('submit', function (e) {
         return;
     }
     
+    if (users.find(u => u.username === username)) {
+        alert("Username already exists. Please choose a different one.");
+        return;
+    }
+
     users.push({ username, email, password }); // Simulate user storage
     userStatuses[username] = 'active'; // Set user status to active
     alert(`Welcome, ${username}! Your account has been created.`);
@@ -25,7 +69,6 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
 
-    // Check user status
     if (userStatuses[username] === 'terminated') {
         alert("Your account has been terminated. You cannot login.");
         return;
@@ -37,28 +80,69 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
     const user = users.find(u => u.username === username && u.password === password);
     
     if (user) {
-        alert(`Welcome back, ${username}!`);
-        document.getElementById('loginForm').reset();
-        document.getElementById('postSection').style.display = 'block'; // Show post section
-        
-        // Show admin verification if the logged in user is the admin
-        if (username === ADMIN_USERNAME) {
-            document.getElementById('adminVerification').style.display = 'block';
+        currentUser = username;
+        document.getElementById("currentUsername").textContent = currentUser;
+        document.getElementById("userDisplay").style.display = "block";
+        document.getElementById("login").style.display = "none";
+        document.getElementById("postSection").style.display = "block";
+        displayPosts();
+
+        if (document.getElementById("rememberMe").checked) {
+            localStorage.setItem("rememberedUsername", currentUser);
         }
+        alert(`Welcome back, ${currentUser}!`);
+        return true;
     } else {
         alert("Invalid username or password.");
     }
 });
+
+// Handle logout
+document.getElementById("logoutButton").addEventListener("click", logoutUser);
 
 // Post creation logic
 document.getElementById('postButton').addEventListener('click', function() {
     const content = document.getElementById('postContent').value;
 
     if (content) {
-        addPost(content);
+        const newPost = { content, author: currentUser, likes: 0 };
+        posts.push(newPost);
+        displayPosts();
         document.getElementById('postContent').value = ''; // Clear post input
     } else {
         alert("You must write something.");
+    }
+});
+
+// Function to display posts
+function displayPosts() {
+    const postsContainer = document.getElementById('posts-container');
+    postsContainer.innerHTML = '';
+
+    posts.forEach((post, index) => {
+        const postDiv = document.createElement('div');
+        postDiv.className = 'post';
+        postDiv.innerHTML = `
+            <p>${post.content} <strong>by ${post.author}</strong></p>
+            <button class="like-button" data-index="${index}">Like (${post.likes})</button>
+            ${post.author === currentUser ? `<button class="delete-button" data-index="${index}">Delete</button>` : ''}
+        `;
+        postsContainer.appendChild(postDiv);
+    });
+}
+
+// Handle post likes
+document.getElementById('posts-container').addEventListener('click', function(e) {
+    if (e.target.classList.contains('like-button')) {
+        const index = e.target.dataset.index;
+        posts[index].likes += 1; // Increment like count
+        displayPosts(); // Refresh the post display
+    }
+
+    if (e.target.classList.contains('delete-button')) {
+        const index = e.target.dataset.index;
+        posts.splice(index, 1); // Remove the post from the array
+        displayPosts(); // Refresh the post display
     }
 });
 
@@ -73,25 +157,5 @@ document.getElementById('verifyAdmin').addEventListener('click', function() {
     }
 });
 
-// Function to add a post to the feed
-function addPost(content) {
-    const postsContainer = document.getElementById('posts-container');
-    const post = document.createElement('div');
-    post.className = 'post';
-    post.textContent = content;
-    postsContainer.appendChild(post);
-}
-
-// Simulating a ban and termination for demonstration purposes
-function banUser(username) {
-    userStatuses[username] = 'banned';
-    setTimeout(() => { userStatuses[username] = 'active'; }, 3 * 24 * 60 * 60 * 1000); // Unban after 3 days
-}
-
-function terminateUser(username) {
-    userStatuses[username] = 'terminated';
-}
-
-// Example usage
-banUser("exampleUser"); // Temporarily ban the user for demonstration
-// terminateUser("anotherUser"); // Terminate account for demonstration
+// Load the current user on page load
+loadCurrentUser();
